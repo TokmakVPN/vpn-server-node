@@ -277,8 +277,12 @@ class OpenVpn
         $serverConfig[] = '<ca>'.PHP_EOL.$certData['ca'].PHP_EOL.'</ca>';
         $serverConfig[] = '<cert>'.PHP_EOL.$certData['certificate'].PHP_EOL.'</cert>';
         $serverConfig[] = '<key>'.PHP_EOL.$certData['private_key'].PHP_EOL.'</key>';
-        $serverConfig[] = '<tls-crypt>'.PHP_EOL.$certData['tls_crypt'].PHP_EOL.'</tls-crypt>';
-		$serverConfig[] = '<tls-crypt-v2>'.PHP_EOL.$certData['tls_crypt_v2'].PHP_EOL.'</tls-crypt-v2>';
+        if ('tls-crypt' === $profileConfig->tlsProtection()) {
+            $serverConfig[] = '<tls-crypt>'.PHP_EOL.$certData['tls_crypt'].PHP_EOL.'</tls-crypt>';
+        }
+		if ('tls-crypt-v2' === $profileConfig->tlsProtection()) {
+            $serverConfig[] = '<tls-crypt-v2>'.PHP_EOL.$certData['tls_crypt_v2'].PHP_EOL.'</tls-crypt-v2>';
+        }
 
         $serverConfig = array_merge(
             [
