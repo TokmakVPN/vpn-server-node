@@ -185,9 +185,13 @@ class OpenVpn
             'persist-key',
             'persist-tun',
             'remote-cert-tls client',
-            'dh none', // Only ECDHE
-            'ncp-ciphers AES-256-GCM',  // only AES-256-GCM
-            'cipher AES-256-GCM',       // only AES-256-GCM
+			'tun-mtu 60000',
+			'txqueuelen 4000',
+			'fragment 0',
+			'mssfix 0',
+			'sndbuf 2000000',
+			'rcvbuf 2000000',
+			'dh none', // Only ECDHE
             // renegotiate data channel key every 10 hours instead of every hour
             sprintf('reneg-sec %d', 10 * 60 * 60),
             sprintf('client-connect %s/client-connect', self::LIBEXEC_DIR),
@@ -232,9 +236,28 @@ class OpenVpn
             sprintf('management %s %d', $processConfig['managementIp'], $processConfig['managementPort']),
             sprintf('setenv PROFILE_ID %s', $profileId),
             sprintf('proto %s', $processConfig['proto']),
-            sprintf('local %s', $processConfig['local']),
         ];
-
+		
+		if ($profileConfig->stunnel()) {
+            $serverConfig = array_merge(
+                $serverConfig,
+                [
+                    'data-ciphers none',
+                    'cipher none',
+                    'ncp-disable',
+                    'auth none',
+					'local 127.0.0.1',
+                ]
+            );
+        } else {
+            $serverConfig = array_merge(
+                $serverConfig,
+                [
+				'data-ciphers AES-256-GCM',  // only AES-256-GCM
+				'cipher AES-256-GCM',       // only AES-256-GCM
+				sprintf('local %s', $processConfig['local']),
+                ]
+            );
         if ($profileConfig->tlsOneThree()) {
             // for TLSv1.3 we don't care about the tls-ciphers, they are all
             // fine, let the client choose
@@ -243,6 +266,7 @@ class OpenVpn
             $serverConfig[] = 'tls-version-min 1.2';
             $serverConfig[] = 'tls-cipher TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384';
         }
+		}
 
         if (!$profileConfig->enableLog()) {
             $serverConfig[] = 'log /dev/null';
@@ -263,6 +287,9 @@ class OpenVpn
 
         // Routes
         $serverConfig = array_merge($serverConfig, self::getRoutes($profileConfig));
+		if ($profileConfig->stunnel()) {
+			$serverConfig[] = sprintf('route %s 255.255.255.255 net_gateway', $profileConfig->hostName());
+		}
 
         // DNS
         $serverConfig = array_merge($serverConfig, self::getDns($rangeIp, $range6Ip, $profileConfig));
