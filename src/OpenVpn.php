@@ -185,12 +185,6 @@ class OpenVpn
             'persist-key',
             'persist-tun',
             'remote-cert-tls client',
-			'tun-mtu 60000',
-			'txqueuelen 4000',
-			'fragment 0',
-			'mssfix 0',
-			'sndbuf 2000000',
-			'rcvbuf 2000000',
 			'dh none', // Only ECDHE
             // renegotiate data channel key every 10 hours instead of every hour
             sprintf('reneg-sec %d', 10 * 60 * 60),
@@ -237,6 +231,7 @@ class OpenVpn
             sprintf('setenv PROFILE_ID %s', $profileId),
             sprintf('proto %s', $processConfig['proto']),
         ];
+		$serverConfig = array_merge($serverConfig, $profileConfig->AddonConfigServer());
 		
 		if ($profileConfig->stunnel()) {
             $serverConfig = array_merge(
